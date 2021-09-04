@@ -2,7 +2,7 @@ const express = require('express');
 const mongodb = require('mongodb');
 const ObjectId = mongodb.ObjectId;
 require ("dotenv").config();
-
+require('express-async-errors');
 (async () => {
     const dbUser = process.env.DB_USER;
     const dbPassword = process.env.DB_PASSWORD;
@@ -40,6 +40,7 @@ app.all("/*", (req, res, next) => {
 });
 
 app.get('/',(req, res) => {
+    const teste = undefined;
     res.send({info: "Olá Blue"});
 });
 
@@ -50,6 +51,10 @@ app.get("/personagens", async (req, res) => {
 app.get("/personagens/:id", async (req, res) => {
     const id = req.params.id;
     const personagem = await getPersonagemById(id);
+    if(!personagem){
+        res.status(404).send({error:"O personagem especificado não foi encontrado."});
+        return;
+    }
     res.send(personagem);
 });
 /*
@@ -76,20 +81,22 @@ app.post("/personagens", async (req, res) => {
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-        res.send(
-            "Requisição inválida, certifique-se que tenha os campos nome e imagemUrl"
+        res.status(400).send(
+            {error: "Personagem inválido, certifique-se que tenha os campos nome e imagemUrl"}
             );
         return;
     }
 
     const result = await personagens.insertOne(objeto);
+    
     console.log(result);
+    
     if (result.acknowledged == false) {
-        res.send("Ocorreu um erro");
+        res.status(500).send({error: "Ocorreu um erro"});
         return;
     }
 
-    res.send(objeto);
+    res.status(201).send(objeto);
 });
 
 app.put("/personagens/:id", async (req, res) => {
@@ -97,8 +104,8 @@ app.put("/personagens/:id", async (req, res) => {
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-        res.send(
-            "Requisição inválida, certifique-se que tenha os campos nome e imagemUrl"
+        res.status(400).send(
+            {error: "Requisição inválida, certifique-se que tenha os campos nome e imagemUrl"}
         );
         return;
     }
@@ -108,7 +115,7 @@ app.put("/personagens/:id", async (req, res) => {
     });
 
     if (quantidadePersonagens !== 1) {
-        res.send("Personagem não encontrado");
+        res.status(404).send({error: "Personagem não encontrado"});
 			return;
     }
     const result = await personagens.updateOne(
@@ -120,8 +127,8 @@ app.put("/personagens/:id", async (req, res) => {
         }
     )
 
-    if (result.modifiedCount !== 1) {
-        res.send("Ocorreu um erro ao atualizar o personagem");
+    if (result.acknowledged == "undefined") {
+        res.status(500).send({error: "Ocorreu um erro ao atualizar o personagem"});
         return;
     }
     res.send(await getPersonagemById(id));
@@ -133,7 +140,7 @@ app.delete("/personagens/:id" , async (req, res) => {
         _id: ObjectId(id),
     });
     if (quantidadePersonagens !== 1 ) {
-        res.send("Personagem não encontrado");
+        res.status(404).send({error: "Personagem não encontrado"});
         return;
     }
 
@@ -142,13 +149,25 @@ app.delete("/personagens/:id" , async (req, res) => {
     });
     
     if (result.deletedCount !== 1) {
-        res.send("Ocorreu um erro ao remover o personagem");
+        res.status(500).send({error:"Ocorreu um erro ao remover o personagem"});
         return;
     }
 
-    res.send("Personagem removido com sucesso!");
+    res.send(204);
 });
 
+app.all("*", function (req, res) {
+    res.status(404).send({error:"Endpoint was not found"});
+});
+
+app.use((error, req, res, next) => {
+    res.status(error.status || 500).send ({
+        error:{
+            status: error.status || 500,
+            message: error.message || "Internal server error",
+        }
+    });
+});
 app.listen(port, ()=> {
     console.info(`App rodando em http://localhost:${port}`)
 })

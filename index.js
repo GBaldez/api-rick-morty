@@ -3,6 +3,8 @@ const mongodb = require('mongodb');
 const ObjectId = mongodb.ObjectId;
 require ("dotenv").config();
 require('express-async-errors');
+const home = require('./components/home/home');
+
 (async () => {
     const dbUser = process.env.DB_USER;
     const dbPassword = process.env.DB_PASSWORD;
@@ -39,10 +41,7 @@ app.all("/*", (req, res, next) => {
     next();
 });
 
-app.get('/',(req, res) => {
-    const teste = undefined;
-    res.send({info: "Olá Blue"});
-});
+app.use("/home", home);
 
 app.get("/personagens", async (req, res) => {
     res.send(await getPersonagensValidas());
@@ -169,6 +168,6 @@ app.use((error, req, res, next) => {
     });
 });
 app.listen(port, ()=> {
-    console.info(`App rodando em http://localhost:${port}`)
+    console.info(`App rodando em http://localhost:${port}/home`)
 })
 })();

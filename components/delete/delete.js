@@ -24,27 +24,26 @@ const personagens = db.collection("personagens");
 
 const getPersonagemById = async(id) => personagens.findOne({_id: ObjectId(id)});
 
-router.post("/", async (req, res) => {
-    const objeto = req.body;
-
-    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-        res.status(400).send({
-            error:
-                "Personagem inválido, certifique-se que tenha os campos nome e imagemUrl",
-        });
+router.delete("/:id" , async (req, res) => {
+    const id = req.params.id;
+    const quantidadePersonagens = await personagens.countDocuments({
+        _id: ObjectId(id),
+    });
+    if (quantidadePersonagens !== 1 ) {
+        res.status(404).send({error: "Personagem não encontrado"});
         return;
     }
 
-    const result = await personagens.insertOne(objeto);
-
-    console.log(result);
-    //Se ocorrer algum erro com o mongoDb esse if vai detectar
-    if (result.acknowledged == false) {
-        res.status(500).send({ error: "Ocorreu um erro" });
+    const result = await personagens.deleteOne({
+        _id: ObjectId(id),
+    });
+    
+    if (result.deletedCount !== 1) {
+        res.status(500).send({error:"Ocorreu um erro ao remover o personagem"});
         return;
     }
 
-    res.status(201).send(objeto);
+    res.send(204);
 });
 })();
 

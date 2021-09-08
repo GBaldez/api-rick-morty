@@ -24,27 +24,14 @@ const personagens = db.collection("personagens");
 
 const getPersonagemById = async(id) => personagens.findOne({_id: ObjectId(id)});
 
-router.post("/", async (req, res) => {
-    const objeto = req.body;
-
-    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-        res.status(400).send({
-            error:
-                "Personagem inválido, certifique-se que tenha os campos nome e imagemUrl",
-        });
+router.get('/:id', async (req, res) => {
+    const id = req.params.id;
+    const personagem = await getPersonagemById(id);
+    if(!personagem){
+        res.status(404).send({error:"O personagem especificado não foi encontrado."});
         return;
     }
-
-    const result = await personagens.insertOne(objeto);
-
-    console.log(result);
-    //Se ocorrer algum erro com o mongoDb esse if vai detectar
-    if (result.acknowledged == false) {
-        res.status(500).send({ error: "Ocorreu um erro" });
-        return;
-    }
-
-    res.status(201).send(objeto);
+    res.send(personagem);
 });
 })();
 

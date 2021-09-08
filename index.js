@@ -57,7 +57,7 @@ app.use("/home", home);
 
 app.use("/personagens/read-all", readAll);
 
-app.use("/:id", personagem);
+app.use("/personagens/read-by-id/", personagem);
 
 app.use("/personagens/create", criar);
 
